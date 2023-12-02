@@ -43,3 +43,9 @@ export interface IUser {
   password: string;
   character: ICharacter;
 }
+
+export interface IPatchData {
+  op: string;
+  path: string;
+  value: any;
+}

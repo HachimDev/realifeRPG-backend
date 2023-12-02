@@ -3,6 +3,7 @@ import { dummyUsers } from "../utils/dummyData";
 import HttpError from "../models/http-error";
 import { IUser } from "../utils/interfaces";
 import { v4 as uuidv4 } from "uuid";
+import { validationResult } from "express-validator";
 
 class UsersController {
   getUserById: RequestHandler = (req, res, next) => {
@@ -21,6 +22,12 @@ class UsersController {
   };
 
   signup: RequestHandler = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors);
+      res.status(422);
+      return next(new HttpError("Invalid inputs passed, please check your data", "422"));
+    }
     const { username, email, password, characterName } = req.body;
 
     const hasUser = dummyUsers.find((u) => u.email === email);

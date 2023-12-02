@@ -2,7 +2,8 @@ import { RequestHandler } from "express";
 import { dummyQuests } from "../utils/dummyData";
 import HttpError from "../models/http-error";
 import { v4 as uuidv4 } from "uuid";
-import { IQuest } from "../utils/interfaces";
+import { IPatchData, IQuest } from "../utils/interfaces";
+import { validationResult } from "express-validator";
 
 class QuestController {
   getQuestById: RequestHandler = (req, res, next) => {
@@ -28,8 +29,17 @@ class QuestController {
   };
 
   createQuest: RequestHandler = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors);
+      res.status(422);
+      return next(new HttpError("Invalid inputs passed, please check your data", "422"));
+    }
+
     const { userId, title, description, rewards, isDaily, isWeekly, expirationDate, type } =
       req.body;
+    // validate request body
+
     const createdQuest = {
       id: uuidv4(),
       title,
@@ -48,11 +58,8 @@ class QuestController {
     res.status(201).json({ quest: createdQuest });
   };
 
-  /* The `updateQuestById` function is a request handler that is responsible for updating a quest in
-  the `dummyQuests` array based on the provided quest ID (`qid`) in the request parameters. */
-  updateQuestById: RequestHandler = (req, res, next) => {
-    const { title, description, rewards, isDaily, isWeekly, expirationDate, type, completed } =
-      req.body;
+  updateQuestbyId: RequestHandler = (req, res, next) => {
+    const dataToPatch: IPatchData[] = req.body;
     const questId = req.params.qid;
     const questIndex = dummyQuests.findIndex((q) => q.id === questId);
 
@@ -60,17 +67,16 @@ class QuestController {
       return next(new HttpError("Could not find a quest for the provided id", "404"));
     }
 
-    const questToUpdate: IQuest = {
-      ...dummyQuests[questIndex],
-      title,
-      description,
-      rewards,
-      isDaily,
-      isWeekly,
-      expirationDate,
-      type,
-      completed,
-    };
+    let questToUpdate = { ...dummyQuests[questIndex] };
+
+    dataToPatch.forEach((patch) => {
+      if (patch.op === "replace") {
+        // remove the first character of the path (a slash)
+        let path = patch.path.slice(1);
+
+        (questToUpdate as any)[path] = patch.value;
+      }
+    });
 
     dummyQuests[questIndex] = questToUpdate;
 
@@ -79,6 +85,9 @@ class QuestController {
 
   deleteQuestById: RequestHandler = (req, res, next) => {
     const questId = req.params.qid;
+    if (!dummyQuests.find((q) => q.id === questId)) {
+      return next(new HttpError("Could not find a quest for the provided id", "404"));
+    }
     const questIndex = dummyQuests.findIndex((q) => q.id === questId);
     dummyQuests.splice(questIndex, 1);
 
