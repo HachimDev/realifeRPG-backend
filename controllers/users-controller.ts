@@ -1,6 +1,8 @@
 import { RequestHandler } from "express";
 import { dummyUsers } from "../utils/dummyData";
 import HttpError from "../models/http-error";
+import { IUser } from "../utils/interfaces";
+import { v4 as uuidv4 } from "uuid";
 
 class UsersController {
   getUserById: RequestHandler = (req, res, next) => {
@@ -13,8 +15,57 @@ class UsersController {
 
     res.json({ user });
   };
-}
 
-// export { getUserById };
+  getUsers: RequestHandler = (req, res, next) => {
+    res.json({ users: dummyUsers });
+  };
+
+  signup: RequestHandler = (req, res, next) => {
+    const { username, email, password, characterName } = req.body;
+
+    const hasUser = dummyUsers.find((u) => u.email === email);
+    if (hasUser) {
+      return next(new HttpError("Could not create user, email already exists", "422"));
+    }
+
+    const createdUser: IUser = {
+      id: uuidv4(),
+      username,
+      email,
+      password,
+      character: {
+        name: characterName,
+        stamina: 100,
+        gold: 0,
+        experience: {
+          level: 1,
+          currentExp: 0,
+          expToNextLevel: 150,
+        },
+        attributes: {
+          strength: 1,
+          dexterity: 1,
+          intelect: 1,
+          charisma: 1,
+          luck: 1,
+        },
+      },
+    };
+
+    dummyUsers.push(createdUser);
+
+    res.status(201).json({ user: createdUser });
+  };
+
+  login: RequestHandler = (req, res, next) => {
+    const { email, password } = req.body;
+
+    const identifiedUser = dummyUsers.find((u) => u.email === email);
+    if (!identifiedUser || identifiedUser.password !== password) {
+      return next(new HttpError("Could not find a user for the provided credentials", "401"));
+    }
+    res.status(200).json({ message: "Logged in!" });
+  };
+}
 
 export default new UsersController();
