@@ -4,6 +4,7 @@ import HttpError from "../models/http-error";
 import { IUser } from "../utils/interfaces";
 import { v4 as uuidv4 } from "uuid";
 import { validationResult } from "express-validator";
+import UserSchema from "../models/userModel";
 
 class UsersController {
   getUserById: RequestHandler = (req, res, next) => {

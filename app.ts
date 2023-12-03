@@ -1,5 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
+import mongoose from "mongoose";
 
 import questRoute from "./routes/quests-routes";
 import userRoute from "./routes/users-routes";
@@ -26,4 +27,13 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   res.json({ message: error.message, codeError: error.name || "An unknown error occurred!" });
 });
 
-app.listen(5000);
+mongoose
+  .connect(
+    "mongodb+srv://hachimjabri:Trowow93@cluster001.blzzdw1.mongodb.net/realiferpg?retryWrites=true&w=majority"
+  )
+  .then(() => {
+    app.listen(5000);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
