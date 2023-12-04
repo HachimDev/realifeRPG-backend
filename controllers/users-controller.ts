@@ -18,11 +18,19 @@ class UsersController {
     res.json({ user });
   };
 
-  getUsers: RequestHandler = (req, res, next) => {
-    res.json({ users: dummyUsers });
+  getUsers: RequestHandler = async (req, res, next) => {
+    let listUsers;
+    try {
+      listUsers = await UserSchema.find({}, "email username");
+      // listUsers = await UserSchema.find({}, "-password");
+    } catch (error) {
+      return next(new HttpError("Fetching users failed, please try again later", "500"));
+    }
+    res.json({ users: listUsers.map((user) => user.toObject({ getters: true })) });
   };
 
-  signup: RequestHandler = (req, res, next) => {
+  // SIGNUP CONTROLLER
+  signup: RequestHandler = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log(errors);
@@ -31,13 +39,20 @@ class UsersController {
     }
     const { username, email, password, characterName } = req.body;
 
-    const hasUser = dummyUsers.find((u) => u.email === email);
-    if (hasUser) {
-      return next(new HttpError("Could not create user, email already exists", "422"));
+    let existingUser;
+    try {
+      existingUser = await UserSchema.findOne({ email: email });
+    } catch (err) {
+      const error = new HttpError("Signing up failed, please try again later", "500");
+      next(error);
     }
 
-    const createdUser: IUser = {
-      id: uuidv4(),
+    if (existingUser) {
+      const error = new HttpError("User exists already, please login instead", "422");
+      return next(error);
+    }
+
+    const createdUser = new UserSchema({
       username,
       email,
       password,
@@ -58,20 +73,33 @@ class UsersController {
           luck: 1,
         },
       },
-    };
+    });
 
-    dummyUsers.push(createdUser);
+    try {
+      await createdUser.save();
+    } catch (err) {
+      const error = new HttpError("Signing up failed, please try again later", "500");
+      return next(error);
+    }
 
-    res.status(201).json({ user: createdUser });
+    res.status(201).json({ user: createdUser.toObject({ getters: true }) });
   };
 
-  login: RequestHandler = (req, res, next) => {
+  // LOGIN CONTROLLER
+  login: RequestHandler = async (req, res, next) => {
     const { email, password } = req.body;
 
-    const identifiedUser = dummyUsers.find((u) => u.email === email);
-    if (!identifiedUser || identifiedUser.password !== password) {
-      return next(new HttpError("Could not find a user for the provided credentials", "401"));
+    let existingUser;
+    try {
+      existingUser = await UserSchema.findOne({ email: email });
+    } catch (err) {
+      return next(new HttpError("Logging in failed, please try again later", "500"));
     }
+
+    if (!existingUser || existingUser.password !== password) {
+      return next(new HttpError("Invalid credentials, could not log you in", "401"));
+    }
+
     res.status(200).json({ message: "Logged in!" });
   };
 }
