@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export interface IReward {
   gold?: number;
   experience: number;
@@ -12,7 +14,7 @@ export interface IQuest {
   expirationDate: Date;
   type: number;
   rewards: IReward;
-  userId: string;
+  userId: mongoose.Types.ObjectId;
 }
 
 export interface IAttributes {

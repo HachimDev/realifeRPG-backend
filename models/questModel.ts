@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { IQuest } from "../utils/interfaces";
 
 const Schema = mongoose.Schema;
@@ -15,7 +15,7 @@ const questShema = new Schema<IQuest>({
     gold: { type: Number },
     experience: { type: Number, required: true },
   },
-  userId: { type: String, required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "User" },
 });
 
 export default mongoose.model<IQuest>("Quest", questShema);
