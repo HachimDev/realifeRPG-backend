@@ -44,6 +44,10 @@ The MongoDB connection string is configured in the `config.ts` file.
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
+## Ownership
+
+This project was started by Hachim JABRI and is owned by him. the sole purpose is to learn how to use node and express with typescript
+
 ## License
 
 This project is licensed under the MIT License.
